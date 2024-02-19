@@ -24,6 +24,11 @@ def load_model_and_tokenizer(model_path):
     model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
     return model, tokenizer
 
+def is_sequence_to_sequence_model(model):
+    seq2seq_classes = (torch.nn.Module, torch.nn.DataParallel,
+                       torch.nn.parallel.DistributedDataParallel)
+    return isinstance(model, seq2seq_classes)
+
 def generate_response(prompt, model, tokenizer, max_length=50, temperature=0.9):
     input_ids = tokenizer.encode(prompt, return_tensors="pt")
     output = model.generate(input_ids, max_length=max_length, temperature=temperature, num_return_sequences=1)
@@ -44,19 +49,31 @@ def main():
 
     lock = Lock()
 
+    streaming = True  
+
+    if not is_sequence_to_sequence_model(model):
+        print("The loaded model is not a sequence-to-sequence model.")
+        return
+
     print("Type 'exit' to exit.")
+    name= input("Enter your name.")
     while True:
-        user_input = input("You: ")
+        
+        user_input = input(name+": ")
         if user_input.lower() == 'exit':
             break
 
         with lock:
-            response_generator = stream_response(user_input, model, tokenizer)
-            print("ChatBot:", end=" ")
-            for token in response_generator:
-                print(token, end="", flush=True)
-                time.sleep(0.05)
-            print()
+            if streaming:
+                response_generator = stream_response(user_input, model, tokenizer)
+                print("ChatBot:", end=" ")
+                for token in response_generator:
+                    print(token, end="", flush=True)
+                    time.sleep(0.05)
+                print()
+            else:
+                response = generate_response(user_input, model, tokenizer)
+                print("ChatBot:", response)
 
 if __name__ == "__main__":
     main()
