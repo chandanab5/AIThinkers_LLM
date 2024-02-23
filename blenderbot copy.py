@@ -7,23 +7,22 @@ import re
 import re
 
 def convert_text_to_sql(text):
-    # Define patterns to match user queries
+ 
     patterns = {
         r"opportunity name with invoice price between (\d+) and (\d+)": r"SELECT OppertunityName FROM PowerAppDev.tblOPPERTUNITIESTest WHERE InvoicePrice BETWEEN \1 AND \2;",
-        # Add more patterns for different types of queries
+   
     }
 
-    # Iterate over patterns to find a match
+
     for pattern, sql_query_template in patterns.items():
         match = re.match(pattern, text)
         if match:
-            # Retrieve matched groups
+     
             lower_bound, upper_bound = match.groups()
-            # Substitute into the SQL query template
+         
             sql_query = sql_query_template.replace("\\1", lower_bound).replace("\\2", upper_bound)
             return sql_query
 
-    # Return None if no match is found
     return None
 
 
